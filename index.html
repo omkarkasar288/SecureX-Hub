@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureX Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&display=swap');
+        body {
+            font-family: 'EB Garamond', serif;
+            background-color: #EAE0D5;
+        }
+        /* Custom styles for the active tab */
+        .tab-btn.active {
+            background-color: #D4A053;
+            color: #423223;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+        .tab-btn {
+            border: 1px solid #D4A053;
+        }
+
+        /* Custom Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #FDFDF5;
+            color: #423223;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            border: 2px solid #D4A053;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-width: 90%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center justify-center min-h-screen text-[#423223]">
+
+    <div class="bg-[#FDFDF5] rounded-xl shadow-xl w-full max-w-4xl overflow-hidden">
+        
+        <div class="bg-[#423223] text-[#D4A053] p-6 rounded-t-xl">
+            <h1 class="text-4xl font-bold mb-4 text-center">SecureX Hub</h1>
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button id="tab-generator" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Password Generator</button>
+                <button id="tab-tester" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Password Tester</button>
+                <button id="tab-encryption" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Text Encryption</button>
+                <button id="tab-qr" class="tab-btn active px-4 py-2 rounded-lg font-bold transition-colors duration-200">QR Generator</button>
+                <button id="tab-aes" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">AES Encryption</button>
+                <button id="tab-sha256" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">SHA256 Hasher</button>
+                <button id="tab-ip" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">IP Tracker</button>
+                <button id="tab-metadata" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Metadata Extractor</button>
+                <button id="tab-steganography" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Steganography</button>
+                <button id="tab-bruteforce" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Brute Force Simulator</button>
+                <button id="tab-vigenere" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Vigenère Cipher</button>
+                <button id="tab-vernam" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Vernam Cipher</button>
+                <button id="tab-digitalsig" class="tab-btn px-4 py-2 rounded-lg font-bold transition-colors duration-200">Digital Signature</button>
+            </div>
+        </div>
+
+        <div class="p-6">
+            
+            <div id="generator-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Generate a Strong Password</h2>
+                <div class="space-y-4">
+                    
+                    <div>
+                        <label for="passwordLength" class="block font-semibold mb-1">Password Length: <span id="lengthValue" class="text-[#D4A053]">12</span></label>
+                        <input type="range" id="passwordLength" min="8" max="32" value="12" class="w-full h-2 bg-[#D4A053] rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeUppercase" checked class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Uppercase (A-Z)</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeLowercase" checked class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Lowercase (a-z)</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeNumbers" checked class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Numbers (0-9)</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeSymbols" class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Symbols (!@#$)</span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button id="generateBtn" class="flex-1 bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Generate Password</button>
+                        <button id="copyBtn" class="flex-1 bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200">Copy to Clipboard</button>
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="text" id="passwordOutput" readonly class="w-full p-3 pr-12 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg font-mono">
+                        <span id="copyMessage" class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-green-600 font-medium opacity-0 transition-opacity duration-300">Copied!</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="tester-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Test Your Password Strength</h2>
+                <div class="space-y-4">
+                    
+                    <div>
+                        <label for="passwordInput" class="block font-semibold mb-1">Enter Password</label>
+                        <input type="password" id="passwordInput" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Strength:</span>
+                            <span id="strengthText" class="font-bold"></span>
+                        </div>
+                        <div class="relative w-full h-3 bg-gray-300 rounded-full overflow-hidden">
+                            <div id="strengthBar" class="absolute h-full transition-all duration-300 ease-in-out" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#FDFDF5] p-4 rounded-lg border border-gray-400">
+                        <h3 class="text-xl font-bold mb-2">Suggestions:</h3>
+                        <ul id="suggestionsList" class="list-disc list-inside space-y-1">
+                            </ul>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="encryption-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Simple Text Encryption (Caesar Cipher)</h2>
+                <div class="space-y-4">
+                    
+                    <div>
+                        <label for="textInput" class="block font-semibold mb-1">Enter Text</label>
+                        <textarea id="textInput" rows="4" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="encryptionKey" class="block font-semibold mb-1">Shift Key (1-25)</label>
+                        <input type="number" id="encryptionKey" value="3" min="1" max="25" class="w-24 p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg">
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button id="encryptBtn" class="flex-1 bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Encrypt Text</button>
+                        <button id="decryptBtn" class="flex-1 bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200">Decrypt Text</button>
+                    </div>
+
+                    <div>
+                        <label for="textOutput" class="block font-semibold mb-1">Output</label>
+                        <textarea id="textOutput" rows="4" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="qr-section" class="tool-section active">
+                <h2 class="text-3xl font-bold mb-4">Generate a QR Code</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="qrInput" class="block font-semibold mb-1">Enter Text or URL</label>
+                        <input type="text" id="qrInput" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg" placeholder="e.g., https://www.google.com">
+                    </div>
+                    <div id="qrcode-container" class="flex flex-col items-center p-4 bg-[#EAE0D5] rounded-lg">
+                        <div id="qrcode" class="mb-4"></div>
+                        <a href="#" id="qrDownloadBtn" class="bg-[#0C3B2E] text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200 hidden">Download QR Code</a>
+                    </div>
+                    <button id="qrGenerateBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Generate QR Code</button>
+                </div>
+            </div>
+
+            <div id="aes-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">AES Encryption/Decryption</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="aesTextInput" class="block font-semibold mb-1">Enter Text</label>
+                        <textarea id="aesTextInput" rows="4" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                    </div>
+                    <div>
+                        <label for="aesKeyInput" class="block font-semibold mb-1">Enter Secret Key</label>
+                        <input type="password" id="aesKeyInput" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg">
+                    </div>
+                    <div class="flex space-x-4">
+                        <button id="aesEncryptBtn" class="flex-1 bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Encrypt</button>
+                        <button id="aesDecryptBtn" class="flex-1 bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200">Decrypt</button>
+                    </div>
+                    <div>
+                        <label for="aesOutput" class="block font-semibold mb-1">Output</label>
+                        <textarea id="aesOutput" rows="4" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sha256-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">SHA256 Hasher</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="sha256Input" class="block font-semibold mb-1">Enter Text to Hash</label>
+                        <textarea id="sha256Input" rows="4" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                    </div>
+                    <button id="sha256HashBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Generate SHA256 Hash</button>
+                    <div>
+                        <label for="sha256Output" class="block font-semibold mb-1">SHA256 Hash</label>
+                        <textarea id="sha256Output" rows="2" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg font-mono"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ip-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">IP Address Tracker</h2>
+                <div class="space-y-4">
+                    <p class="text-gray-600">Click the button below to find the location details for your current IP address.</p>
+                    <button id="ipTrackBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Track My IP</button>
+                    <div id="ipOutput" class="bg-[#EAE0D5] p-4 rounded-lg border border-gray-400 hidden">
+                        <h3 class="text-2xl font-bold mb-2">IP Details:</h3>
+                        <p id="ipAddress" class="text-[#423223]"></p>
+                        <p id="ipCity" class="text-[#423223]"></p>
+                        <p id="ipRegion" class="text-[#423223]"></p>
+                        <p id="ipCountry" class="text-[#423223]"></p>
+                        <p id="ipOrg" class="text-[#423223]"></p>
+                    </div>
+                    <div id="ipLoading" class="hidden text-center text-[#D4A053] font-bold">Loading...</div>
+                    <div id="ipError" class="hidden text-center text-red-600 font-bold"></div>
+                </div>
+            </div>
+
+            <div id="metadata-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Metadata Extractor (for Images)</h2>
+                <div class="space-y-4">
+                    <p class="text-gray-600">
+                        Upload an image file (e.g., JPG, TIFF) to extract its EXIF metadata.
+                        Please note that metadata is often removed by apps and social media platforms when you share images.
+                        The tool will only show data that is present in the file itself.
+                    </p>
+                    <input type="file" id="imageInput" accept="image/*" class="w-full text-[#423223] font-semibold border-2 border-gray-400 rounded-lg p-3">
+                    <button id="extractMetadataBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Extract Metadata</button>
+                    <div>
+                        <label for="metadataOutput" class="block font-semibold mb-1">Extracted Metadata</label>
+                        <textarea id="metadataOutput" rows="10" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-sm font-mono"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="steganography-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Steganography Encoder/Decoder</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-[#FDFDF5] p-4 rounded-lg border border-gray-400">
+                        <h3 class="text-2xl font-bold mb-2">1. Encode a Message</h3>
+                        <p class="text-gray-600 mb-4">
+                            Upload a **PNG** image and a short message to hide it in the file.
+                            The encoded image will be available for download.
+                        </p>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="encodeImageInput" class="block font-semibold mb-1">Upload PNG Image</label>
+                                <input type="file" id="encodeImageInput" accept="image/png" class="w-full text-[#423223] font-semibold border-2 border-gray-400 rounded-lg p-3">
+                            </div>
+                            <div>
+                                <label for="messageInput" class="block font-semibold mb-1">Message to Hide</label>
+                                <textarea id="messageInput" rows="3" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                            </div>
+                            <button id="encodeSteganographyBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Encode Message</button>
+                            <a id="downloadEncodedBtn" class="w-full bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200 text-center hidden cursor-pointer">Download Encoded Image</a>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#FDFDF5] p-4 rounded-lg border border-gray-400">
+                        <h3 class="text-2xl font-bold mb-2">2. Decode a Message</h3>
+                        <p class="text-gray-600 mb-4">
+                            Upload a **PNG** image that has a hidden message to extract it.
+                        </p>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="decodeImageInput" class="block font-semibold mb-1">Upload Encoded PNG</label>
+                                <input type="file" id="decodeImageInput" accept="image/png" class="w-full text-[#423223] font-semibold border-2 border-gray-400 rounded-lg p-3">
+                            </div>
+                            <button id="decodeSteganographyBtn" class="w-full bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200">Decode Message</button>
+                            <div>
+                                <label for="decodedMessageOutput" class="block font-semibold mb-1">Decoded Message</label>
+                                <textarea id="decodedMessageOutput" rows="3" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bruteforce-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Brute Force Simulator</h2>
+                <div class="space-y-4">
+                    <p class="text-gray-600">Simulate a brute-force attack on a simple password to see how long it might take.</p>
+                    <div>
+                        <label for="bruteforceInput" class="block font-semibold mb-1">Enter Target Password</label>
+                        <input type="text" id="bruteforceInput" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg">
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="bruteUppercase" checked class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Uppercase (A-Z)</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="bruteLowercase" checked class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Lowercase (a-z)</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="bruteNumbers" checked class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Numbers (0-9)</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="bruteSymbols" class="form-checkbox h-4 w-4 rounded text-[#0C3B2E] border-gray-400">
+                            <span>Symbols (!@#$)</span>
+                        </label>
+                    </div>
+                    <button id="startBruteforceBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Start Brute Force</button>
+                    <div class="bg-[#EAE0D5] p-4 rounded-lg border border-gray-400">
+                        <h3 class="text-xl font-bold mb-2">Simulation Log:</h3>
+                        <p id="bruteforceStatus" class="font-bold text-gray-700"></p>
+                        <p id="bruteforceAttempts" class="text-sm text-gray-500"></p>
+                        <p id="bruteforceCurrentGuess" class="text-2xl font-mono"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vigenere-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Vigenère Cipher</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="vigenereInput" class="block font-semibold mb-1">Enter Text</label>
+                        <textarea id="vigenereInput" rows="4" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                    </div>
+                    <div>
+                        <label for="vigenereKey" class="block font-semibold mb-1">Enter Key (e.g., "KEY")</label>
+                        <input type="text" id="vigenereKey" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg uppercase">
+                    </div>
+                    <div class="flex space-x-4">
+                        <button id="vigenereEncryptBtn" class="flex-1 bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Encrypt</button>
+                        <button id="vigenereDecryptBtn" class="flex-1 bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200">Decrypt</button>
+                    </div>
+                    <div>
+                        <label for="vigenereOutput" class="block font-semibold mb-1">Output</label>
+                        <textarea id="vigenereOutput" rows="4" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vernam-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Vernam Cipher (One-Time Pad)</h2>
+                <div class="space-y-4">
+                    <p class="text-gray-600">The Vernam cipher is unbreakable if the key (pad) is truly random, used only once, and is as long as the message itself.</p>
+                    <div>
+                        <label for="vernamInput" class="block font-semibold mb-1">Enter Text (A-Z only)</label>
+                        <input type="text" id="vernamInput" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg uppercase">
+                    </div>
+                    <button id="generateVernamKeyBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Generate One-Time Pad</button>
+                    <div>
+                        <label for="vernamKey" class="block font-semibold mb-1">One-Time Pad (Key)</label>
+                        <input type="text" id="vernamKey" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg font-mono uppercase">
+                    </div>
+                    <div class="flex space-x-4">
+                        <button id="vernamEncryptBtn" class="flex-1 bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">Encrypt</button>
+                        <button id="vernamDecryptBtn" class="flex-1 bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200">Decrypt</button>
+                    </div>
+                    <div>
+                        <label for="vernamOutput" class="block font-semibold mb-1">Output</label>
+                        <textarea id="vernamOutput" rows="4" readonly class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg font-mono"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="digitalsig-section" class="tool-section hidden">
+                <h2 class="text-3xl font-bold mb-4">Digital Signature (ECDSA)</h2>
+                <div class="space-y-4">
+                    <p class="text-gray-600">This tool simulates a digital signature process using the ECDSA algorithm. It generates a key pair, signs a message, and verifies the signature.</p>
+                    <div>
+                        <button id="generateKeysBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">1. Generate Key Pair</button>
+                        <div id="keyPairOutput" class="bg-[#EAE0D5] p-4 rounded-lg border border-gray-400 mt-2 hidden">
+                            <h3 class="text-xl font-bold mb-2">Key Pair Generated:</h3>
+                            <p class="font-semibold">Public Key:</p>
+                            <textarea id="publicKey" rows="2" readonly class="w-full p-2 rounded-lg bg-[#FDFDF5] border font-mono text-sm"></textarea>
+                            <p class="font-semibold mt-2">Private Key:</p>
+                            <textarea id="privateKey" rows="2" readonly class="w-full p-2 rounded-lg bg-[#FDFDF5] border font-mono text-sm"></textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="messageToSign" class="block font-semibold mb-1">2. Enter Message to Sign</label>
+                        <textarea id="messageToSign" rows="3" class="w-full p-3 rounded-lg bg-[#EAE0D5] border-2 border-gray-400 focus:outline-none focus:border-[#D4A053] text-lg"></textarea>
+                        <button id="signMessageBtn" class="w-full bg-[#D4A053] text-[#423223] font-bold py-3 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200 mt-2">3. Sign Message</button>
+                        <div id="signatureOutput" class="bg-[#EAE0D5] p-4 rounded-lg border border-gray-400 mt-2 hidden">
+                            <h3 class="text-xl font-bold mb-2">Signature:</h3>
+                            <textarea id="signatureResult" rows="2" readonly class="w-full p-2 rounded-lg bg-[#FDFDF5] border font-mono text-sm"></textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">4. Verify Signature</label>
+                        <p class="text-gray-600 mb-2">The message, public key, and signature are automatically populated. Click "Verify" to check authenticity.</p>
+                        <button id="verifySignatureBtn" class="w-full bg-[#0C3B2E] text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200">5. Verify Signature</button>
+                        <div id="verificationResult" class="bg-[#EAE0D5] p-4 rounded-lg border border-gray-400 mt-2 hidden">
+                            <h3 class="text-xl font-bold mb-2">Verification Result:</h3>
+                            <p id="verificationText" class="text-xl font-bold"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <div id="alertModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modalTitle" class="text-2xl font-bold mb-4"></h3>
+            <p id="modalMessage" class="mb-6"></p>
+            <button id="closeModalBtn" class="bg-[#D4A053] text-[#423223] font-bold py-2 px-4 rounded-lg">Close</button>
+        </div>
+    </div>
+
+    <footer class="mt-8 p-6 rounded-b-xl bg-[#423223] text-center text-[#D4A053]">
+        <div class="md:grid md:grid-cols-3 md:gap-8 justify-items-center">
+            <div>
+                <p class="text-lg font-bold">Created by:</p>
+                <ul class="mt-2 text-sm">
+                    <li>Omkar Kasar</li>
+                    <li>Sankalp Kamble</li>
+                    <li>Vaibhav Jadhav</li>
+                </ul>
+            </div>
+            <div>
+                <p class="text-lg font-bold">Department:</p>
+                <p class="mt-2 text-sm">Information Technology</p>
+            </div>
+            <div>
+                <p class="text-lg font-bold">HOD:</p>
+                <p class="mt-2 text-sm">M.S Karande</p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <p class="text-lg font-bold">Guidance by:</p>
+            <p class="mt-2 text-sm">Tanmay Dikshit sir, Cyber Sanskar</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Modal Functions ---
+            const alertModal = document.getElementById('alertModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            function showAlert(title, message) {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                alertModal.classList.remove('hidden');
+            }
+
+            closeModalBtn.addEventListener('click', () => {
+                alertModal.classList.add('hidden');
+            });
+
+
+            // --- Tab Switching Logic ---
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const toolSections = document.querySelectorAll('.tool-section');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Deactivate all tabs and hide all sections
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    toolSections.forEach(section => section.classList.add('hidden'));
+
+                    // Activate the clicked tab and show the corresponding section
+                    button.classList.add('active');
+                    const sectionId = button.id.replace('tab-', '');
+                    document.getElementById(sectionId + '-section').classList.remove('hidden');
+                });
+            });
+
+            // Set initial active tab
+            document.getElementById('tab-qr').click();
+
+            // --- Password Generator Logic ---
+            const passwordLength = document.getElementById('passwordLength');
+            const lengthValue = document.getElementById('lengthValue');
+            const includeUppercase = document.getElementById('includeUppercase');
+            const includeLowercase = document.getElementById('includeLowercase');
+            const includeNumbers = document.getElementById('includeNumbers');
+            const includeSymbols = document.getElementById('includeSymbols');
+            const generateBtn = document.getElementById('generateBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const passwordOutput = document.getElementById('passwordOutput');
+            const copyMessage = document.getElementById('copyMessage');
+
+            const characters = {
+                uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                lowercase: 'abcdefghijklmnopqrstuvwxyz',
+                numbers: '0123456789',
+                symbols: '!@#$%^&*()_+~`|}{[]:;?><,./-='
+            };
+
+            passwordLength.addEventListener('input', () => {
+                lengthValue.textContent = passwordLength.value;
+            });
+
+            generateBtn.addEventListener('click', () => {
+                let availableChars = '';
+                if (includeUppercase.checked) availableChars += characters.uppercase;
+                if (includeLowercase.checked) availableChars += characters.lowercase;
+                if (includeNumbers.checked) availableChars += characters.numbers;
+                if (includeSymbols.checked) availableChars += characters.symbols;
+
+                if (availableChars.length === 0) {
+                    showAlert('Error', 'Please select at least one character type.');
+                    return;
+                }
+
+                let password = '';
+                const length = passwordLength.value;
+                for (let i = 0; i < length; i++) {
+                    password += availableChars.charAt(Math.floor(Math.random() * availableChars.length));
+                }
+                passwordOutput.value = password;
+            });
+
+            copyBtn.addEventListener('click', () => {
+                if (passwordOutput.value) {
+                    navigator.clipboard.writeText(passwordOutput.value).then(() => {
+                        copyMessage.classList.remove('opacity-0');
+                        setTimeout(() => copyMessage.classList.add('opacity-0'), 2000);
+                    });
+                }
+            });
+
+
+            // --- Password Tester Logic ---
+            const passwordInput = document.getElementById('passwordInput');
+            const strengthBar = document.getElementById('strengthBar');
+            const strengthText = document.getElementById('strengthText');
+            const suggestionsList = document.getElementById('suggestionsList');
+
+            passwordInput.addEventListener('input', () => {
+                const password = passwordInput.value;
+                let strength = 0;
+                let suggestions = [];
+
+                if (password.length > 7) {
+                    strength += 1;
+                } else {
+                    suggestions.push('Make your password longer (at least 8 characters).');
+                }
+                if (/[a-z]/.test(password)) {
+                    strength += 1;
+                } else {
+                    suggestions.push('Include lowercase letters.');
+                }
+                if (/[A-Z]/.test(password)) {
+                    strength += 1;
+                } else {
+                    suggestions.push('Include uppercase letters.');
+                }
+                if (/[0-9]/.test(password)) {
+                    strength += 1;
+                } else {
+                    suggestions.push('Include numbers.');
+                }
+                if (/[^A-Za-z0-9]/.test(password)) {
+                    strength += 1;
+                } else {
+                    suggestions.push('Include special symbols (e.g., !@#$%^).');
+                }
+
+                let strengthTextValue = '';
+                let barColor = '';
+                let barWidth = 0;
+
+                switch (strength) {
+                    case 0:
+                        strengthTextValue = 'Very Weak';
+                        barColor = '#ef4444'; // red-500
+                        barWidth = 0;
+                        break;
+                    case 1:
+                    case 2:
+                        strengthTextValue = 'Weak';
+                        barColor = '#f97316'; // orange-500
+                        barWidth = 33;
+                        break;
+                    case 3:
+                        strengthTextValue = 'Medium';
+                        barColor = '#eab308'; // yellow-500
+                        barWidth = 66;
+                        break;
+                    case 4:
+                    case 5:
+                        strengthTextValue = 'Strong';
+                        barColor = '#22c55e'; // green-500
+                        barWidth = 100;
+                        break;
+                }
+
+                strengthText.textContent = strengthTextValue;
+                strengthBar.style.width = `${barWidth}%`;
+                strengthBar.style.backgroundColor = barColor;
+
+                suggestionsList.innerHTML = '';
+                if (suggestions.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = 'Great password! Keep it up!';
+                    suggestionsList.appendChild(li);
+                } else {
+                    suggestions.forEach(suggestion => {
+                        const li = document.createElement('li');
+                        li.textContent = suggestion;
+                        suggestionsList.appendChild(li);
+                    });
+                }
+            });
+
+
+            // --- Text Encryption (Caesar Cipher) Logic ---
+            const textInput = document.getElementById('textInput');
+            const encryptionKey = document.getElementById('encryptionKey');
+            const encryptBtn = document.getElementById('encryptBtn');
+            const decryptBtn = document.getElementById('decryptBtn');
+            const textOutput = document.getElementById('textOutput');
+
+            function caesarCipher(text, key, decrypt = false) {
+                if (decrypt) {
+                    key = (26 - key) % 26;
+                }
+                let output = '';
+                for (let i = 0; i < text.length; i++) {
+                    let char = text[i];
+                    if (char.match(/[a-z]/i)) {
+                        let code = text.charCodeAt(i);
+                        if (code >= 65 && code <= 90) { // Uppercase
+                            char = String.fromCharCode(((code - 65 + key) % 26) + 65);
+                        } else if (code >= 97 && code <= 122) { // Lowercase
+                            char = String.fromCharCode(((code - 97 + key) % 26) + 97);
+                        }
+                    }
+                    output += char;
+                }
+                return output;
+            }
+
+            encryptBtn.addEventListener('click', () => {
+                const text = textInput.value;
+                const key = parseInt(encryptionKey.value);
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a valid shift key (1-25).');
+                    return;
+                }
+                textOutput.value = caesarCipher(text, key);
+            });
+
+            decryptBtn.addEventListener('click', () => {
+                const text = textInput.value;
+                const key = parseInt(encryptionKey.value);
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a valid shift key (1-25).');
+                    return;
+                }
+                textOutput.value = caesarCipher(text, key, true);
+            });
+
+
+            // --- QR Code Generator Logic ---
+            const qrInput = document.getElementById('qrInput');
+            const qrGenerateBtn = document.getElementById('qrGenerateBtn');
+            const qrcodeContainer = document.getElementById('qrcode-container');
+            const qrDownloadBtn = document.getElementById('qrDownloadBtn');
+
+            let qrcode = new QRCode(document.getElementById("qrcode"), {
+                width: 128,
+                height: 128
+            });
+
+            qrGenerateBtn.addEventListener('click', () => {
+                const text = qrInput.value;
+                if (!text) {
+                    showAlert('Error', 'Please enter some text or a URL.');
+                    return;
+                }
+                qrcode.makeCode(text);
+                qrDownloadBtn.classList.remove('hidden');
+                
+                // Wait for the QR code to be rendered before getting the image data
+                setTimeout(() => {
+                    const qrImage = qrcodeContainer.querySelector('img');
+                    if (qrImage) {
+                        qrDownloadBtn.href = qrImage.src;
+                    } else {
+                        // Fallback for browsers that use canvas
+                        const canvas = qrcodeContainer.querySelector('canvas');
+                        if (canvas) {
+                            qrDownloadBtn.href = canvas.toDataURL('image/png');
+                        }
+                    }
+                    qrDownloadBtn.download = 'qrcode.png';
+                }, 500); // A small delay to ensure the image is ready
+            });
+
+
+            // --- AES Encryption Logic ---
+            const aesTextInput = document.getElementById('aesTextInput');
+            const aesKeyInput = document.getElementById('aesKeyInput');
+            const aesEncryptBtn = document.getElementById('aesEncryptBtn');
+            const aesDecryptBtn = document.getElementById('aesDecryptBtn');
+            const aesOutput = document.getElementById('aesOutput');
+
+            aesEncryptBtn.addEventListener('click', () => {
+                const text = aesTextInput.value;
+                const key = aesKeyInput.value;
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a secret key.');
+                    return;
+                }
+                try {
+                    const encrypted = CryptoJS.AES.encrypt(text, key);
+                    aesOutput.value = encrypted.toString();
+                } catch (e) {
+                    showAlert('Error', 'Encryption failed. Please check your inputs.');
+                }
+            });
+
+            aesDecryptBtn.addEventListener('click', () => {
+                const text = aesTextInput.value;
+                const key = aesKeyInput.value;
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a secret key.');
+                    return;
+                }
+                try {
+                    const decrypted = CryptoJS.AES.decrypt(text, key);
+                    aesOutput.value = decrypted.toString(CryptoJS.enc.Utf8);
+                } catch (e) {
+                    showAlert('Error', 'Decryption failed. The key might be incorrect.');
+                }
+            });
+
+
+            // --- SHA256 Hasher Logic ---
+            const sha256Input = document.getElementById('sha256Input');
+            const sha256HashBtn = document.getElementById('sha256HashBtn');
+            const sha256Output = document.getElementById('sha256Output');
+
+            sha256HashBtn.addEventListener('click', () => {
+                const text = sha256Input.value;
+                if (!text) {
+                    showAlert('Error', 'Please enter text to hash.');
+                    return;
+                }
+                const hash = CryptoJS.SHA256(text);
+                sha256Output.value = hash.toString(CryptoJS.enc.Hex);
+            });
+
+
+            // --- IP Tracker Logic ---
+            const ipTrackBtn = document.getElementById('ipTrackBtn');
+            const ipOutput = document.getElementById('ipOutput');
+            const ipLoading = document.getElementById('ipLoading');
+            const ipError = document.getElementById('ipError');
+            const ipAddress = document.getElementById('ipAddress');
+            const ipCity = document.getElementById('ipCity');
+            const ipRegion = document.getElementById('ipRegion');
+            const ipCountry = document.getElementById('ipCountry');
+            const ipOrg = document.getElementById('ipOrg');
+
+            ipTrackBtn.addEventListener('click', () => {
+                ipOutput.classList.add('hidden');
+                ipError.classList.add('hidden');
+                ipLoading.classList.remove('hidden');
+
+                fetch('https://ipapi.co/json/')
+                    .then(response => response.json())
+                    .then(data => {
+                        ipLoading.classList.add('hidden');
+                        if (data.error) {
+                            ipError.textContent = `Error: ${data.reason}`;
+                            ipError.classList.remove('hidden');
+                            return;
+                        }
+                        ipAddress.textContent = `IP Address: ${data.ip}`;
+                        ipCity.textContent = `City: ${data.city}`;
+                        ipRegion.textContent = `Region: ${data.region}`;
+                        ipCountry.textContent = `Country: ${data.country_name}`;
+                        ipOrg.textContent = `Organization: ${data.org}`;
+                        ipOutput.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        ipLoading.classList.add('hidden');
+                        ipError.textContent = 'Failed to fetch IP data. Please try again.';
+                        ipError.classList.remove('hidden');
+                    });
+            });
+
+
+            // --- Metadata Extractor Logic ---
+            const imageInput = document.getElementById('imageInput');
+            const extractMetadataBtn = document.getElementById('extractMetadataBtn');
+            const metadataOutput = document.getElementById('metadataOutput');
+
+            extractMetadataBtn.addEventListener('click', () => {
+                const file = imageInput.files[0];
+                if (!file) {
+                    showAlert('Error', 'Please select an image file first.');
+                    return;
+                }
+                
+                EXIF.getData(file, function() {
+                    const allMetaData = EXIF.pretty(this);
+                    if (allMetaData) {
+                        metadataOutput.value = allMetaData;
+                    } else {
+                        metadataOutput.value = 'No EXIF metadata found in this image.';
+                    }
+                });
+            });
+
+
+            // --- Steganography Logic ---
+            const encodeImageInput = document.getElementById('encodeImageInput');
+            const messageInput = document.getElementById('messageInput');
+            const encodeSteganographyBtn = document.getElementById('encodeSteganographyBtn');
+            const downloadEncodedBtn = document.getElementById('downloadEncodedBtn');
+            const decodeImageInput = document.getElementById('decodeImageInput');
+            const decodeSteganographyBtn = document.getElementById('decodeSteganographyBtn');
+            const decodedMessageOutput = document.getElementById('decodedMessageOutput');
+
+            // Hides a message in the least significant bit (LSB) of each color channel
+            function encodeMessage(image, message) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = image.width;
+                canvas.height = image.height;
+                context.drawImage(image, 0, 0);
+
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                const messageLength = message.length;
+                let messageBits = '';
+
+                // Convert message to binary
+                for (let i = 0; i < messageLength; i++) {
+                    const charCode = message.charCodeAt(i);
+                    messageBits += charCode.toString(2).padStart(8, '0');
+                }
+
+                // Add a null terminator
+                messageBits += '00000000';
+
+                if (messageBits.length > (data.length / 4) * 3) { // Check against a safer limit (3 color channels)
+                    showAlert('Error', 'Message is too long to hide in this image. Please use a larger image or a shorter message.');
+                    return null;
+                }
+
+                let bitIndex = 0;
+                for (let i = 0; i < data.length && bitIndex < messageBits.length; i += 4) {
+                    // Hide a bit in the red channel
+                    if (bitIndex < messageBits.length) {
+                        data[i] = (data[i] & 0xFE) | parseInt(messageBits[bitIndex++]);
+                    }
+                    // Hide a bit in the green channel
+                    if (bitIndex < messageBits.length) {
+                        data[i + 1] = (data[i + 1] & 0xFE) | parseInt(messageBits[bitIndex++]);
+                    }
+                    // Hide a bit in the blue channel
+                    if (bitIndex < messageBits.length) {
+                        data[i + 2] = (data[i + 2] & 0xFE) | parseInt(messageBits[bitIndex++]);
+                    }
+                }
+
+                context.putImageData(imageData, 0, 0);
+                return canvas.toDataURL('image/png');
+            }
+
+            // Decodes a hidden message
+            function decodeMessage(image) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = image.width;
+                canvas.height = image.height;
+                context.drawImage(image, 0, 0);
+
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                let binaryMessage = '';
+
+                for (let i = 0; i < data.length; i += 4) {
+                    binaryMessage += (data[i] & 1).toString(); // Red channel
+                    binaryMessage += (data[i + 1] & 1).toString(); // Green channel
+                    binaryMessage += (data[i + 2] & 1).toString(); // Blue channel
+                }
+
+                let message = '';
+                for (let i = 0; i < binaryMessage.length; i += 8) {
+                    const byte = binaryMessage.substring(i, i + 8);
+                    if (byte === '00000000') break; // Found null terminator
+                    const charCode = parseInt(byte, 2);
+                    message += String.fromCharCode(charCode);
+                }
+                return message;
+            }
+
+            encodeSteganographyBtn.addEventListener('click', () => {
+                const file = encodeImageInput.files[0];
+                const message = messageInput.value;
+
+                if (!file || !message) {
+                    showAlert('Error', 'Please upload a PNG image and enter a message.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const encodedImage = encodeMessage(img, message);
+                        if (encodedImage) {
+                            downloadEncodedBtn.href = encodedImage;
+                            downloadEncodedBtn.download = 'encoded-image.png';
+                            downloadEncodedBtn.classList.remove('hidden');
+                            showAlert('Success', 'Message encoded successfully! Download the image below.');
+                        }
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            decodeSteganographyBtn.addEventListener('click', () => {
+                const file = decodeImageInput.files[0];
+                if (!file) {
+                    showAlert('Error', 'Please upload an encoded PNG image.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const decodedMessage = decodeMessage(img);
+                        decodedMessageOutput.value = decodedMessage;
+                        if (!decodedMessage) {
+                            showAlert('Info', 'No message could be decoded from this image, or the message was empty.');
+                        }
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+
+            // --- Brute Force Simulator Logic ---
+            const bruteforceInput = document.getElementById('bruteforceInput');
+            const startBruteforceBtn = document.getElementById('startBruteforceBtn');
+            const bruteforceStatus = document.getElementById('bruteforceStatus');
+            const bruteforceAttempts = document.getElementById('bruteforceAttempts');
+            const bruteforceCurrentGuess = document.getElementById('bruteforceCurrentGuess');
+            const bruteUppercase = document.getElementById('bruteUppercase');
+            const bruteLowercase = document.getElementById('bruteLowercase');
+            const bruteNumbers = document.getElementById('bruteNumbers');
+            const bruteSymbols = document.getElementById('bruteSymbols');
+
+            let bruteForceInterval = null;
+
+            startBruteforceBtn.addEventListener('click', () => {
+                // Clear any previous simulation
+                if (bruteForceInterval) {
+                    clearInterval(bruteForceInterval);
+                }
+                
+                const targetPassword = bruteforceInput.value;
+                if (!targetPassword) {
+                    showAlert('Error', 'Please enter a password to simulate.');
+                    return;
+                }
+
+                let characterSet = '';
+                if (bruteUppercase.checked) characterSet += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                if (bruteLowercase.checked) characterSet += 'abcdefghijklmnopqrstuvwxyz';
+                if (bruteNumbers.checked) characterSet += '0123456789';
+                if (bruteSymbols.checked) characterSet += '!@#$%^&*()_+~`|}{[]:;?><,./-='
+                
+                if (characterSet.length === 0) {
+                    showAlert('Error', 'Please select at least one character set.');
+                    return;
+                }
+
+                let attempts = 0;
+                let startTime = Date.now();
+
+                bruteforceStatus.textContent = 'Status: Attacking...';
+                startBruteforceBtn.disabled = true;
+
+                bruteForceInterval = setInterval(() => {
+                    let currentGuess = '';
+                    for (let i = 0; i < targetPassword.length; i++) {
+                        currentGuess += characterSet.charAt(Math.floor(Math.random() * characterSet.length));
+                    }
+                    attempts++;
+                    
+                    bruteforceAttempts.textContent = `Attempts: ${attempts}`;
+                    bruteforceCurrentGuess.textContent = currentGuess;
+
+                    if (currentGuess === targetPassword) {
+                        clearInterval(bruteForceInterval);
+                        const endTime = Date.now();
+                        const timeTaken = (endTime - startTime) / 1000;
+                        bruteforceStatus.textContent = 'Status: Password Cracked! 🎉';
+                        bruteforceCurrentGuess.textContent = `Found: ${currentGuess}`;
+                        bruteforceAttempts.textContent = `Attempts: ${attempts} | Time Taken: ${timeTaken.toFixed(2)} seconds`;
+                        startBruteforceBtn.disabled = false;
+                        showAlert('Success', `Password "${targetPassword}" cracked in ${attempts} attempts and ${timeTaken.toFixed(2)} seconds.`);
+                    }
+                }, 10); // A small delay to make the simulation visible
+            });
+
+
+            // --- Vigenère Cipher Logic ---
+            const vigenereInput = document.getElementById('vigenereInput');
+            const vigenereKey = document.getElementById('vigenereKey');
+            const vigenereEncryptBtn = document.getElementById('vigenereEncryptBtn');
+            const vigenereDecryptBtn = document.getElementById('vigenereDecryptBtn');
+            const vigenereOutput = document.getElementById('vigenereOutput');
+
+            function vigenere(text, key, decrypt = false) {
+                let output = '';
+                let keyIndex = 0;
+                key = key.toUpperCase().replace(/[^A-Z]/g, '');
+
+                if (!key) {
+                    showAlert('Error', 'Please enter a valid key (A-Z).');
+                    return '';
+                }
+
+                for (let i = 0; i < text.length; i++) {
+                    const char = text[i];
+                    if (char.match(/[a-z]/i)) {
+                        const isUppercase = char === char.toUpperCase();
+                        let charCode = char.toUpperCase().charCodeAt(0) - 65;
+                        const keyCode = key[keyIndex % key.length].charCodeAt(0) - 65;
+
+                        let newCharCode;
+                        if (decrypt) {
+                            newCharCode = (charCode - keyCode + 26) % 26;
+                        } else {
+                            newCharCode = (charCode + keyCode) % 26;
+                        }
+                        
+                        const newChar = String.fromCharCode(newCharCode + 65);
+                        output += isUppercase ? newChar : newChar.toLowerCase();
+                        keyIndex++;
+                    } else {
+                        output += char;
+                    }
+                }
+                return output;
+            }
+
+            vigenereEncryptBtn.addEventListener('click', () => {
+                const text = vigenereInput.value;
+                const key = vigenereKey.value;
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a key.');
+                    return;
+                }
+                vigenereOutput.value = vigenere(text, key);
+            });
+
+            vigenereDecryptBtn.addEventListener('click', () => {
+                const text = vigenereInput.value;
+                const key = vigenereKey.value;
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a key.');
+                    return;
+                }
+                vigenereOutput.value = vigenere(text, key, true);
+            });
+
+
+            // --- Vernam Cipher Logic ---
+            const vernamInput = document.getElementById('vernamInput');
+            const vernamKey = document.getElementById('vernamKey');
+            const generateVernamKeyBtn = document.getElementById('generateVernamKeyBtn');
+            const vernamEncryptBtn = document.getElementById('vernamEncryptBtn');
+            const vernamDecryptBtn = document.getElementById('vernamDecryptBtn');
+            const vernamOutput = document.getElementById('vernamOutput');
+
+            function generateKey(length) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                let key = '';
+                for (let i = 0; i < length; i++) {
+                    key += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return key;
+            }
+
+            function vernamCipher(text, key, decrypt = false) {
+                if (text.length !== key.length) {
+                    showAlert('Error', 'Text and key must be the same length.');
+                    return '';
+                }
+                let output = '';
+                for (let i = 0; i < text.length; i++) {
+                    const textChar = text.charCodeAt(i) - 65;
+                    const keyChar = key.charCodeAt(i) - 65;
+                    let result;
+                    if (decrypt) {
+                        result = (textChar - keyChar + 26) % 26;
+                    } else {
+                        result = (textChar + keyChar) % 26;
+                    }
+                    output += String.fromCharCode(result + 65);
+                }
+                return output;
+            }
+
+            generateVernamKeyBtn.addEventListener('click', () => {
+                const text = vernamInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+                if (!text) {
+                    showAlert('Error', 'Please enter text (A-Z only) to generate a key.');
+                    return;
+                }
+                vernamKey.value = generateKey(text.length);
+            });
+
+            vernamEncryptBtn.addEventListener('click', () => {
+                const text = vernamInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+                const key = vernamKey.value.toUpperCase().replace(/[^A-Z]/g, '');
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a one-time pad.');
+                    return;
+                }
+                vernamOutput.value = vernamCipher(text, key);
+            });
+
+            vernamDecryptBtn.addEventListener('click', () => {
+                const text = vernamInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+                const key = vernamKey.value.toUpperCase().replace(/[^A-Z]/g, '');
+                if (!text || !key) {
+                    showAlert('Error', 'Please enter text and a one-time pad.');
+                    return;
+                }
+                vernamOutput.value = vernamCipher(text, key, true);
+            });
+
+
+            // --- Digital Signature Logic ---
+            const generateKeysBtn = document.getElementById('generateKeysBtn');
+            const keyPairOutput = document.getElementById('keyPairOutput');
+            const publicKeyElem = document.getElementById('publicKey');
+            const privateKeyElem = document.getElementById('privateKey');
+            const messageToSign = document.getElementById('messageToSign');
+            const signMessageBtn = document.getElementById('signMessageBtn');
+            const signatureOutput = document.getElementById('signatureOutput');
+            const signatureResultElem = document.getElementById('signatureResult');
+            const verifySignatureBtn = document.getElementById('verifySignatureBtn');
+            const verificationResult = document.getElementById('verificationResult');
+            const verificationText = document.getElementById('verificationText');
+            
+            let keyPair = null;
+            let signature = null;
+
+            // Using the Web Crypto API for simplicity
+            async function generateKeyPair() {
+                try {
+                    keyPair = await window.crypto.subtle.generateKey({
+                        name: 'ECDSA',
+                        namedCurve: 'P-256'
+                    }, true, ['sign', 'verify']);
+
+                    const exportedPublicKey = await window.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+                    const exportedPrivateKey = await window.crypto.subtle.exportKey('jwk', keyPair.privateKey);
+
+                    publicKeyElem.value = JSON.stringify(exportedPublicKey, null, 2);
+                    privateKeyElem.value = JSON.stringify(exportedPrivateKey, null, 2);
+                    keyPairOutput.classList.remove('hidden');
+                    showAlert('Success', 'Key pair generated successfully!');
+                } catch (e) {
+                    showAlert('Error', 'Failed to generate key pair. Your browser may not support the Web Crypto API or there was an error.');
+                }
+            }
+
+            async function signMessage() {
+                if (!keyPair) {
+                    showAlert('Error', 'Please generate a key pair first.');
+                    return;
+                }
+                if (!messageToSign.value) {
+                    showAlert('Error', 'Please enter a message to sign.');
+                    return;
+                }
+                try {
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(messageToSign.value);
+                    signature = await window.crypto.subtle.sign({
+                        name: 'ECDSA',
+                        hash: {
+                            name: 'SHA-256'
+                        }
+                    }, keyPair.privateKey, data);
+
+                    signatureResultElem.value = btoa(String.fromCharCode(...new Uint8Array(signature)));
+                    signatureOutput.classList.remove('hidden');
+                    showAlert('Success', 'Message signed successfully!');
+                } catch (e) {
+                    showAlert('Error', 'Failed to sign message. Check console for details.');
+                    console.error(e);
+                }
+            }
+
+            async function verifySignature() {
+                if (!keyPair || !signature) {
+                    showAlert('Error', 'Please generate keys and sign a message first.');
+                    return;
+                }
+                try {
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(messageToSign.value);
+                    const isValid = await window.crypto.subtle.verify({
+                        name: 'ECDSA',
+                        hash: {
+                            name: 'SHA-256'
+                        }
+                    }, keyPair.publicKey, signature, data);
+
+                    verificationResult.classList.remove('hidden');
+                    if (isValid) {
+                        verificationText.textContent = 'Signature is VALID ✅';
+                        verificationText.classList.remove('text-red-600');
+                        verificationText.classList.add('text-green-600');
+                    } else {
+                        verificationText.textContent = 'Signature is INVALID ❌';
+                        verificationText.classList.remove('text-green-600');
+                        verificationText.classList.add('text-red-600');
+                    }
+                } catch (e) {
+                    showAlert('Error', 'Failed to verify signature. Check console for details.');
+                    console.error(e);
+                }
+            }
+
+            generateKeysBtn.addEventListener('click', generateKeyPair);
+            signMessageBtn.addEventListener('click', signMessage);
+            verifySignatureBtn.addEventListener('click', verifySignature);
+
+        });
+    </script>
+</body>
+</html>
